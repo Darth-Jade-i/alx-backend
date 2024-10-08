@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ gettext('home_title') }}</title>
+</head>
+<body>
+    <h1>{{ gettext('home_header') }}</h1>
+    <p>
+        {% if g.user %}
+            {{ gettext('logged_in_as', username=g.user['name']) }}
+        {% else %}
+            {{ gettext('not_logged_in') }}
+        {% endif %}
+    </p>
+</body>
+</html>
