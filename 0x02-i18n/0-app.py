@@ -1,31 +1,21 @@
 #!/usr/bin/env python3
+"""Module for task 0
 """
-This module contains a basic Flask
-application that renders a simple HTML page.
-"""
-
-# Import the necessary module from the Flask package.
 from flask import Flask, render_template
 
-# Create a Flask application instance.
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 
 
-# Define a route for the root URL '/'.
-@app.route('/', methods=['GET'], strict_slashes=False)
-def index():
-    """
-    The index function serves the homepage of the application.
-    It renders an HTML template called '0-index.html'.
+@app.route("/")
+def index() -> str:
+    """The index function displays the home page of the web application.
 
     Returns:
-        The rendered HTML template as a string.
+        str: contents of the home page.
     """
-    # Render and return the '0-index.html' template.
-    return render_template('0-index.html')
+    return render_template("0-index.html")
 
 
-# Check if the script is executed directly (and not imported as a module).
-if __name__ == '__main__':
-    # Run the Flask application on the local development server.
+if __name__ == "__main__":
     app.run(debug=True)
