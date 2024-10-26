@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
+"""Module for task 5
 """
-Flask application with mocked user login, Babel integration, and
-dynamic content based on user login status.
-"""
-
+from typing import Dict, Union
 from flask import Flask, render_template, request, g
-from flask_babel import Babel, gettext
-from typing import Optional, Dict
+from flask_babel import Babel
 
-# Initialize the Flask application
 app = Flask(__name__)
 
-# Mock user table to emulate a database
+app.url_map.strict_slashes = False
+
+
+class Config:
+    """Represents a Flask Babel configuration.
+    """
+    LANGUAGES = ["en", "fr"]
+    BABEL_DEFAULT_LOCALE = "en"
+    BABEL_DEFAULT_TIMEZONE = "UTC"
+
+
+app.config.from_object(Config)
+babel = Babel(app)
 users = {
     1: {"name": "Balou", "locale": "fr", "timezone": "Europe/Paris"},
     2: {"name": "Beyonce", "locale": "en", "timezone": "US/Central"},
@@ -20,92 +28,70 @@ users = {
 }
 
 
-# Configuration class for Flask and Babel settings
-class Config:
-    """
-    Configuration class that defines supported languages,
-    default locale, and timezone for the application.
-    """
-    LANGUAGES = ["en", "fr"]  # Supported languages
-    BABEL_DEFAULT_LOCALE = "en"  # Default language/locale
-    BABEL_DEFAULT_TIMEZONE = "UTC"  # Default timezone
-
-
-# Apply the configuration to the app
-app.config.from_object(Config)
-
-# Initialize Babel with the Flask app
-babel = Babel(app)
-
-
-def get_user() -> Optional[Dict[str, Optional[str]]]:
-    """
-    Retrieves a user dictionary based on the login_as parameter.
+@app.route("/")
+def index_5() -> str:
+    """The index function displays the home page of the web application.
 
     Returns:
-        dict: The user dictionary if found, otherwise None.
+        str: contents of the home page.
     """
-    # Get the user ID from the 'login_as' URL parameter
-    user_id = request.args.get('login_as')
+    return render_template("5-index.html")
 
-    # If user_id is present and is in the
-    # users dictionary, return the user data
-    if user_id and int(user_id) in users:
-        return users[int(user_id)]
 
-    # If user_id is not valid or not present, return None
+@babel.localeselector
+def get_locale() -> str:
+    """Determines the best match for the client's preferred language.
+
+    This function uses Flask's request object to access the client's preferred
+    languages and the app's supported languages (defined in the Config class)
+    to determine the best match. The best match is then returned as the locale.
+
+    Returns:
+        str: The locale code for the best match (e.g. "en", "fr").
+    """
+    # Get the locale parameter from the incoming request
+    locale = request.args.get('locale')
+    # Get list of supported languages from Config
+    supported_languages = app.config["LANGUAGES"]
+    if locale and locale in supported_languages:
+        # If the locale parameter is present and is a supported locale,
+        # return it
+        return locale
+    else:
+        # Use request.accept_languages to get the best match
+        best_match = request.accept_languages.best_match(supported_languages)
+        return best_match
+
+
+def get_user() -> Union[Dict, None]:
+    """Returns a user dictionary based on the given ID
+
+    Returns:
+        Union[Dict, None]: The user dictionary if found, otherwise None.
+    """
+    # Get the user_id from the login_as URL parameters
+    login_id = request.args.get('login_as')
+    # If the user ID exists in the URL parameters
+    if login_id:
+        # Get the user dictionary from the `users` dictionary using the user ID
+        return users.get(int(login_id))
+    # If the user ID does not exist in the URL parameters, return None
     return None
 
 
 @app.before_request
-def before_request():
+def before_request() -> None:
+    """Function to be executed before every request.
     """
-    This function runs before each request and sets the user
-    in the global context if a valid user is logged in.
-    """
-    # Retrieve the user using the get_user function
-    g.user = get_user()
+    # Use the get_user function to get the user details
+    user = get_user()
+    # Set the user as a global variable on flask.g
+    g.user = user
 
 
-@babel.localeselector
-def get_locale():
-    """
-    Selects the best match language from
-    the client's request or URL parameter.
-
-    Returns:
-        str: The selected language/locale.
-    """
-    # Check if 'locale' parameter is in the URL
-    # and if it matches supported languages
-    locale = request.args.get('locale')
-    if locale in app.config['LANGUAGES']:
-        print(locale)
-        return locale
-
-    # If no locale parameter, fall back to the
-    # user's preferred language if logged in
-    if g.user and g.user['locale'] in app.config['LANGUAGES']:
-        return g.user['locale']
-
-    # Default behavior: return the best match based on request headers
-    return request.accept_languages.best_match(app.config['LANGUAGES'])
+# Register the before_request function to be executed before every request
+app.before_request(before_request)
 
 
-@app.route('/')
-def index():
-    """
-    The main route that renders the home
-    page template with translated text.
-    It displays a custom message if the user is logged in.
-
-    Returns:
-        str: Rendered HTML template for the home page.
-    """
-    # Render the template with appropriate messages based on user login status
-    return render_template('5-index.html')
-
-
-if __name__ == '__main__':
-    # Run the application
-    app.run()
+if __name__ == "__main__":
+    app.run(debug=True)

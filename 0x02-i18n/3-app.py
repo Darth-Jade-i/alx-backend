@@ -1,60 +1,53 @@
 #!/usr/bin/env python3
+"""Module for task 3
 """
-This module contains a Flask application with Babel integration,
-including localization and translation of text using message IDs.
-"""
-
-# import babel
 from flask import Flask, render_template, request
-from flask_babel import Babel, gettext
+from flask_babel import Babel
 
-# Initialize the Flask application
 app = Flask(__name__)
 
+app.url_map.strict_slashes = False
 
-# Configuration class for Flask and Babel settings
+
 class Config:
+    """Represents a Flask Babel configuration.
     """
-    Configuration class that defines supported languages,
-    default locale, and timezone for the application.
-    """
-    LANGUAGES = ["en", "fr"]  # Supported languages
-    BABEL_DEFAULT_LOCALE = "en"  # Default language/locale
-    BABEL_DEFAULT_TIMEZONE = "UTC"  # Default timezone
+    LANGUAGES = ["en", "fr"]
+    BABEL_DEFAULT_LOCALE = "en"
+    BABEL_DEFAULT_TIMEZONE = "UTC"
 
 
-# Apply the configuration to the app
 app.config.from_object(Config)
-
-# Initialize Babel with the Flask app
 babel = Babel(app)
 
 
+@app.route("/")
+def index_3() -> str:
+    """The index function displays the home page of the web application.
+
+    Returns:
+        str: contents of the home page.
+    """
+    return render_template("3-index.html")
+
+
 @babel.localeselector
-def get_locale():
-    """
-    Selects the best match language from the client's request.
+def get_locale() -> str:
+    """Determines the best match for the client's preferred language.
+
+    This function uses Flask's request object to access the client's preferred
+    languages and the app's supported languages (defined in the Config class)
+    to determine the best match. The best match is then returned as the locale.
 
     Returns:
-        str: The best matching language from supported languages.
+        str: The locale code for the best match (e.g. "en", "fr").
     """
-    return request.accept_languages.best_match(app.config['LANGUAGES'])
+    # Get list of supported languages from Config
+    supported_languages = app.config["LANGUAGES"]
+    # Use request.accept_languages to get the best match
+    best_match = request.accept_languages.best_match(supported_languages)
+    return best_match
 
 
-@app.route('/')
-def index():
-    """
-    The main route that renders the home page template with translated text.
-
-    Returns:
-        str: Rendered HTML template for the home page.
-    """
-    # Render the template with translated title and header
-    return render_template('3-index.html',
-                           title=gettext("home_title"),
-                           header=gettext("home_header"))
-
-
-if __name__ == '__main__':
-    # Run the application
-    app.run()
+if __name__ == "__main__":
+    app.run(debug=True)
